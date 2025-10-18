@@ -79,22 +79,30 @@ qualys_cloud_platform: "https://qagpublic.qg1.apps.qualys.com.au"
 
 ## Platform Detection
 
-The role automatically detects platform and architecture:
+The role automatically detects platform and architecture from Ansible facts.
 
-| OS | Platform Parameter | Architecture Parameter |
-|----|-------------------|----------------------|
-| RHEL/CentOS/Rocky | LINUX | X_86_64, ARM_64, PPC_64_LE, S_390_X |
-| Ubuntu | LINUX_UBUNTU | X_86_64, ARM_64 |
-| Ubuntu s390x | LINUX_UBUNTU_S_390_X | S_390_X |
-| Amazon Linux | LINUX_AWSBR | X_86_64, ARM_64 |
-| macOS Intel | MACOSX | X_86_64 |
-| macOS Apple Silicon | MACOSX_M_1 | ARM_64 |
-| Windows | WINDOWS | X_64 |
-| AIX | AIX | POWER_5 |
-| Solaris x86 | SOLARIS_X_86 | X_86_64 |
-| Solaris SPARC | SOLARIS_SPARC | SPARC |
+**Linux:**
+- RHEL/CentOS/Rocky/Alma → LINUX (X_86_64, ARM_64, PPC_64_LE, S_390_X)
+- Ubuntu → LINUX_UBUNTU (X_86_64, ARM_64)
+- Ubuntu s390x → LINUX_UBUNTU_S_390_X (S_390_X)
+- Amazon Linux → LINUX_AWSBR (X_86_64, ARM_64)
+- CoreOS → LINUX_COREOS (X_86_64)
+- Gentoo → GENTOO_LINUX (X_86_64)
 
-Manual override available via `qualys_platform_type` and `qualys_architecture` variables.
+**macOS:**
+- Intel → MACOSX (X_86_64)
+- Apple Silicon → MACOSX_M_1 (ARM_64)
+
+**Windows:**
+- All versions → WINDOWS (X_64)
+
+**Unix:**
+- AIX → AIX (POWER_5)
+- Solaris x86 → SOLARIS_X_86 (X_86_64)
+- Solaris SPARC → SOLARIS_SPARC (SPARC)
+- FreeBSD/OpenBSD → BSD (X_86_64)
+
+Manual override: Set `qualys_platform_type` and `qualys_architecture` variables.
 
 ## Tags
 
@@ -106,16 +114,46 @@ ansible-playbook playbook.yml --tags windows
 
 ## Troubleshooting
 
-Agent not appearing in portal:
-- Wait 10 minutes for initial check-in
-- Check service status: `systemctl status qualysagent` (Linux) or Service Manager (Windows)
-- Verify connectivity to platform URL
-- Check logs: `/var/log/qualys/qualys-cloud-agent.log` (Linux) or `C:\ProgramData\Qualys\QualysAgent\QualysAgent.log` (Windows)
+**Agent not appearing in Qualys portal**
 
-Download failures:
-- Verify API credentials have Cloud Agent API access
-- Check network connectivity to qualysapi domain
-- Ensure platform/architecture combination is valid (see API_REFERENCE.md)
+Check agent service status:
+```bash
+# Linux
+systemctl status qualysagent
+journalctl -u qualysagent -n 50
+
+# Windows
+Get-Service QualysAgent
+Get-Content "C:\ProgramData\Qualys\QualysAgent\QualysAgent.log" -Tail 50
+
+# macOS
+sudo launchctl list | grep qualys
+```
+
+Verify connectivity to Qualys platform:
+```bash
+# Test platform connectivity
+curl -v https://qagpublic.qg1.apps.qualys.com/CloudAgent/
+
+# Check agent status
+/usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh status
+```
+
+**Installation or download failures**
+
+Verify API credentials and permissions:
+```yaml
+# Credentials must have Cloud Agent API access
+qualys_api_username: "user_with_agent_api_access"
+qualys_api_password: "valid_password"
+```
+
+Check detected platform values:
+```bash
+ansible-playbook playbook.yml -vv | grep "Platform Type"
+```
+
+For additional troubleshooting steps, refer to the [Qualys Cloud Agent Troubleshooting Guide](https://docs.qualys.com/en/ca/portal/latest/agents/troubleshoot.htm).
 
 ## Documentation
 
