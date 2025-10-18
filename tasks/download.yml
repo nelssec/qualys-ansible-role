@@ -72,10 +72,17 @@
         </preferences>
       </ServiceRequest>
 
+- name: Download | Set temp directory path
+  ansible.builtin.set_fact:
+    qualys_temp_dir: >-
+      {% if ansible_facts['system'] == 'Linux' %}{{ qualys_agent_linux_download_path }}
+      {% elif ansible_facts['system'] == 'Darwin' %}{{ qualys_agent_macos_download_path }}
+      {% else %}{{ qualys_agent_windows_download_path }}{% endif %}
+
 - name: Download | Create temporary XML file
   ansible.builtin.copy:
     content: "{{ qualys_download_xml }}"
-    dest: "{{ qualys_agent_linux_download_path if ansible_facts['system'] == 'Linux' else (qualys_agent_macos_download_path if ansible_facts['system'] == 'Darwin' else qualys_agent_windows_download_path) }}/download_request.xml"
+    dest: "{{ qualys_temp_dir }}/download_request.xml"
     mode: '0600'
 
 - name: Download | Set download path based on OS
@@ -130,5 +137,5 @@
 
 - name: Download | Cleanup XML request file
   ansible.builtin.file:
-    path: "{{ qualys_agent_linux_download_path if ansible_facts['system'] == 'Linux' else (qualys_agent_macos_download_path if ansible_facts['system'] == 'Darwin' else qualys_agent_windows_download_path) }}/download_request.xml"
+    path: "{{ qualys_temp_dir }}/download_request.xml"
     state: absent

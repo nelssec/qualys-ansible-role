@@ -1,27 +1,28 @@
 ---
-- name: macOS | Check if Qualys Agent is already installed
+- name: MacOS | Check if Qualys Agent is already installed
   ansible.builtin.stat:
     path: /Applications/QualysCloudAgent.app
   register: qualys_macos_app
   tags:
     - preflight
 
-- name: macOS | Display current agent status
+- name: MacOS | Display current agent status
   ansible.builtin.debug:
     msg: "Qualys Cloud Agent is {{ 'installed' if qualys_macos_app.stat.exists else 'not installed' }}"
   tags:
     - preflight
 
-- name: macOS | Handle agent removal
+- name: MacOS | Handle agent removal
   when:
     - qualys_agent_state == "absent"
   block:
-    - name: macOS | Unload LaunchDaemon
+    - name: MacOS | Unload LaunchDaemon
       ansible.builtin.command:
         cmd: launchctl unload /Library/LaunchDaemons/com.qualys.cloud-agent.plist
-      ignore_errors: true
+      failed_when: false
+      changed_when: false
 
-    - name: macOS | Remove Qualys Cloud Agent
+    - name: MacOS | Remove Qualys Cloud Agent
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
@@ -31,15 +32,15 @@
         - /usr/local/qualys
         - /Library/Application Support/Qualys
 
-    - name: macOS | Agent removal completed
+    - name: MacOS | Agent removal completed
       ansible.builtin.debug:
         msg: "Qualys Cloud Agent has been successfully removed."
 
-- name: macOS | End play for removal
+- name: MacOS | End play for removal
   ansible.builtin.meta: end_host
   when: qualys_agent_state == "absent"
 
-- name: macOS | Create download directory
+- name: MacOS | Create download directory
   ansible.builtin.file:
     path: "{{ qualys_agent_macos_download_path }}"
     state: directory
@@ -47,12 +48,12 @@
   tags:
     - prepare
 
-- name: macOS | Download agent via Qualys API
+- name: MacOS | Download agent via Qualys API
   ansible.builtin.include_tasks: download.yml
   tags:
     - download
 
-- name: macOS | Install Qualys Cloud Agent package
+- name: MacOS | Install Qualys Cloud Agent package
   ansible.builtin.command:
     cmd: installer -pkg {{ qualys_agent_macos_download_path }}/{{ qualys_agent_macos_package_name }} -target /
   register: qualys_pkg_install
@@ -60,11 +61,11 @@
   tags:
     - install
 
-- name: macOS | Configure agent activation
+- name: MacOS | Configure agent activation
   when:
     - qualys_pkg_install is changed or qualys_agent_force_reinstall | bool
   block:
-    - name: macOS | Run activation script
+    - name: MacOS | Run activation script
       ansible.builtin.command:
         cmd: >
           /Applications/QualysCloudAgent.app/Contents/MacOS/qualys-cloud-agent.sh
@@ -79,11 +80,11 @@
       no_log: true
       timeout: "{{ qualys_agent_install_timeout }}"
 
-    - name: macOS | Display activation result
+    - name: MacOS | Display activation result
       ansible.builtin.debug:
         msg: "Agent activation completed with status: {{ qualys_agent_activation.rc }}"
 
-- name: macOS | Clean up installer
+- name: MacOS | Clean up installer
   ansible.builtin.file:
     path: "{{ qualys_agent_macos_download_path }}/{{ qualys_agent_macos_package_name }}"
     state: absent
@@ -93,7 +94,7 @@
   tags:
     - cleanup
 
-- name: macOS | Installation summary
+- name: MacOS | Installation summary
   ansible.builtin.debug:
     msg:
       - "Qualys Cloud Agent installation completed successfully"

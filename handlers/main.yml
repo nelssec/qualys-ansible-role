@@ -20,7 +20,7 @@
     name: "{{ qualys_agent_service_name_linux }}"
     state: reloaded
   when: ansible_facts['os_family'] != "Windows"
-  ignore_errors: true
+  failed_when: false
   listen: reload qualys agent
 
 - name: Verify agent connectivity
@@ -30,7 +30,7 @@
     timeout: 10
     validate_certs: true
   register: qualys_connectivity_check
-  ignore_errors: true
+  failed_when: false
   delegate_to: localhost
   run_once: true
   listen: verify qualys connectivity

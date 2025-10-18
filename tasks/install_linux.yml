@@ -20,21 +20,21 @@
       ansible.builtin.service:
         name: "{{ qualys_agent_service_name_linux }}"
         state: stopped
-      ignore_errors: true
+      failed_when: false
 
     - name: Linux | Remove Qualys Cloud Agent package (RPM)
       ansible.builtin.package:
         name: "{{ qualys_agent_linux_package_name }}"
         state: absent
       when: ansible_facts['os_family'] in ['RedHat', 'Suse']
-      ignore_errors: true
+      failed_when: false
 
     - name: Linux | Remove Qualys Cloud Agent package (DEB)
       ansible.builtin.package:
         name: "{{ qualys_agent_linux_package_name }}"
         state: absent
       when: ansible_facts['os_family'] == 'Debian'
-      ignore_errors: true
+      failed_when: false
 
     - name: Linux | Remove agent directories
       ansible.builtin.file:

@@ -3,7 +3,7 @@
   ansible.windows.win_service:
     name: "{{ qualys_agent_service_name_windows }}"
   register: qualys_windows_service_check
-  ignore_errors: true
+  failed_when: false
   tags:
     - preflight
 
@@ -21,7 +21,7 @@
       ansible.windows.win_service:
         name: "{{ qualys_agent_service_name_windows }}"
         state: stopped
-      ignore_errors: true
+      failed_when: false
 
     - name: Windows | Find Qualys uninstaller
       ansible.windows.win_find:
@@ -112,7 +112,7 @@
     program: 'C:\Program Files\Qualys\QualysAgent\qualys-cloud-agent.exe'
     enabled: true
     state: present
-  ignore_errors: true
+  failed_when: false
 
 - name: Windows | Clean up installer
   ansible.windows.win_file:

@@ -21,7 +21,8 @@
 - name: Display installation details
   ansible.builtin.debug:
     msg:
-      - "OS: {{ ansible_facts['os_family'] }} {{ ansible_facts['distribution'] | default(ansible_facts['system']) }} {{ ansible_facts['distribution_version'] | default('') }}"
+      - "OS: {{ ansible_facts['os_family'] }} {{ ansible_facts['distribution'] | default(ansible_facts['system']) }}"
+      - "Version: {{ ansible_facts['distribution_version'] | default('N/A') }}"
       - "Architecture: {{ ansible_facts['architecture'] }}"
       - "Platform: {{ qualys_cloud_platform }}"
       - "State: {{ qualys_agent_state }}"

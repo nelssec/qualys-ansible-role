@@ -1,13 +1,13 @@
 ---
 galaxy_info:
   role_name: qualys_cloud_agent
-  namespace: security
+  namespace: nelssec
   author: DevSecOps Team
   description: Deploy Qualys Cloud Agent across all supported platforms
   company: Your Organization
   license: MIT
   min_ansible_version: "2.10"
-  
+
   platforms:
     - name: EL
       versions:
@@ -27,7 +27,6 @@ galaxy_info:
         - bookworm
     - name: Amazon
       versions:
-        - "2"
         - "2023"
     - name: Windows
       versions:

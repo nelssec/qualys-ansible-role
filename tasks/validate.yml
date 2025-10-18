@@ -57,7 +57,9 @@
 
     - name: Validate | Display connectivity status (Linux)
       ansible.builtin.debug:
-        msg: "Connectivity to Qualys platform: {{ 'OK' if qualys_connectivity.status is defined and qualys_connectivity.status == 200 else 'Unable to verify' }}"
+        msg: >-
+          Connectivity to Qualys platform:
+          {{ 'OK' if qualys_connectivity.status is defined and qualys_connectivity.status == 200 else 'Unable to verify' }}
 
 - name: Validate | Check installation on macOS
   when:
