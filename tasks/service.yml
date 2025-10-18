@@ -1,0 +1,109 @@
+---
+# Service management tasks for Qualys Cloud Agent
+
+# Linux Service Management
+- name: Service | Manage Linux service
+  when:
+    - ansible_facts['os_family'] != "Windows"
+    - ansible_facts['os_family'] != "Darwin"
+  block:
+    - name: Service | Ensure Qualys Agent service is in desired state (Linux)
+      ansible.builtin.service:
+        name: "{{ qualys_agent_service_name_linux }}"
+        state: "{{ qualys_agent_service_state }}"
+        enabled: "{{ qualys_agent_service_enabled }}"
+      register: qualys_service_linux
+
+    - name: Service | Get Linux service status
+      ansible.builtin.service_facts:
+
+    - name: Service | Display Linux service status
+      ansible.builtin.debug:
+        msg:
+          - "Service Name: {{ qualys_agent_service_name_linux }}"
+          - "Service State: {{ ansible_facts.services[qualys_agent_service_name_linux + '.service'].state | default('unknown') }}"
+          - "Service Enabled: {{ ansible_facts.services[qualys_agent_service_name_linux + '.service'].status | default('unknown') }}"
+
+    - name: Service | Verify Linux agent is running
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+      when:
+        - qualys_agent_service_state == "started"
+        - qualys_service_linux is changed
+
+# macOS Service Management
+- name: Service | Manage macOS service
+  when:
+    - ansible_facts['os_family'] == "Darwin"
+  block:
+    - name: Service | Load Qualys Agent LaunchDaemon (macOS)
+      ansible.builtin.command:
+        cmd: launchctl load /Library/LaunchDaemons/com.qualys.cloud-agent.plist
+      register: qualys_launchd_load
+      changed_when: qualys_launchd_load.rc == 0
+      failed_when: false
+      when:
+        - qualys_agent_service_state == "started"
+
+    - name: Service | Start Qualys Agent (macOS)
+      ansible.builtin.command:
+        cmd: launchctl start com.qualys.cloud-agent
+      register: qualys_service_macos
+      changed_when: qualys_service_macos.rc == 0
+      failed_when: false
+      when:
+        - qualys_agent_service_state == "started"
+
+    - name: Service | Display macOS service status
+      ansible.builtin.debug:
+        msg:
+          - "Service Name: com.qualys.cloud-agent"
+          - "Service managed via launchctl"
+
+# Windows Service Management
+- name: Service | Manage Windows service
+  when:
+    - ansible_facts['os_family'] == "Windows"
+  block:
+    - name: Service | Ensure Qualys Agent service is in desired state (Windows)
+      ansible.windows.win_service:
+        name: "{{ qualys_agent_service_name_windows }}"
+        state: "{{ qualys_agent_service_state }}"
+        start_mode: "{{ 'auto' if qualys_agent_service_enabled else 'manual' }}"
+      register: qualys_service_windows
+
+    - name: Service | Get Windows service details
+      ansible.windows.win_service:
+        name: "{{ qualys_agent_service_name_windows }}"
+      register: qualys_service_info
+
+    - name: Service | Display Windows service status
+      ansible.builtin.debug:
+        msg:
+          - "Service Name: {{ qualys_agent_service_name_windows }}"
+          - "Service State: {{ qualys_service_info.state }}"
+          - "Service Start Mode: {{ qualys_service_info.start_mode }}"
+          - "Service Status: {{ qualys_service_info.status }}"
+
+    - name: Service | Verify Windows agent is running
+      ansible.windows.win_wait_for:
+        timeout: 30
+      when:
+        - qualys_agent_service_state == "started"
+        - qualys_service_windows is changed
+
+# Service Health Check
+- name: Service | Perform agent health check
+  block:
+    - name: Service | Wait for agent to initialize
+      ansible.builtin.pause:
+        seconds: 10
+      when:
+        - (qualys_service_linux is defined and qualys_service_linux is changed) or
+          (qualys_service_macos is defined and qualys_service_macos is changed) or
+          (qualys_service_windows is defined and qualys_service_windows is changed)
+
+    - name: Service | Agent service management completed
+      ansible.builtin.debug:
+        msg: "Qualys Cloud Agent service is {{ qualys_agent_service_state }} and {{ 'enabled' if qualys_agent_service_enabled else 'disabled' }} on system startup."

@@ -1,0 +1,44 @@
+---
+# Basic deployment
+- name: Deploy Qualys Cloud Agent
+  hosts: all
+  become: true
+  vars:
+    qualys_activation_id: "{{ vault_qualys_activation_id }}"
+    qualys_customer_id: "{{ vault_qualys_customer_id }}"
+    qualys_api_username: "{{ vault_qualys_api_username }}"
+    qualys_api_password: "{{ vault_qualys_api_password }}"
+    qualys_cloud_platform: "https://qagpublic.qg1.apps.qualys.com"
+  roles:
+    - qualys_cloud_agent
+
+# Multi-region with proxy
+- name: Deploy with proxy configuration
+  hosts: production
+  become: true
+  vars:
+    qualys_activation_id: "{{ vault_qualys_activation_id }}"
+    qualys_customer_id: "{{ vault_qualys_customer_id }}"
+    qualys_api_username: "{{ vault_qualys_api_username }}"
+    qualys_api_password: "{{ vault_qualys_api_password }}"
+    qualys_cloud_platform: "https://qagpublic.qg1.apps.qualys.eu"
+    qualys_agent_proxy_url: "http://proxy.example.com:3128"
+    qualys_agent_log_level: 3
+  roles:
+    - qualys_cloud_agent
+
+# AWS deployment with tagging
+- name: Deploy on AWS instances
+  hosts: aws
+  become: true
+  vars:
+    qualys_activation_id: "{{ vault_qualys_activation_id }}"
+    qualys_customer_id: "{{ vault_qualys_customer_id }}"
+    qualys_api_username: "{{ vault_qualys_api_username }}"
+    qualys_api_password: "{{ vault_qualys_api_password }}"
+    qualys_cloud_platform: "https://qagpublic.qg1.apps.qualys.com"
+    qualys_agent_tags:
+      - "Environment:{{ environment }}"
+      - "Region:{{ aws_region }}"
+  roles:
+    - qualys_cloud_agent

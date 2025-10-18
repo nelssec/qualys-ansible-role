@@ -1,0 +1,22 @@
+---
+# RedHat/CentOS/Rocky/AlmaLinux specific variables
+
+qualys_agent_package_manager: "yum"
+qualys_agent_service_manager: "systemd"
+
+# For RHEL 7, use init.d
+qualys_agent_service_manager_rhel7: "init"
+
+# Repository configuration
+qualys_agent_repo_name: "qualys-cloud-agent"
+qualys_agent_repo_description: "Qualys Cloud Agent Repository for RHEL"
+qualys_agent_repo_gpgcheck: true
+
+# Package dependencies
+qualys_agent_dependencies:
+  - curl
+  - openssl
+  - ca-certificates
+
+# SELinux considerations
+qualys_agent_selinux_enabled: true

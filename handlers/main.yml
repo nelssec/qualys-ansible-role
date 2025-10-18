@@ -1,0 +1,36 @@
+---
+# Handlers for Qualys Cloud Agent
+
+- name: Restart qualys agent (Linux)
+  ansible.builtin.service:
+    name: "{{ qualys_agent_service_name_linux }}"
+    state: restarted
+  when: ansible_facts['os_family'] != "Windows"
+  listen: restart qualys agent
+
+- name: Restart qualys agent (Windows)
+  ansible.windows.win_service:
+    name: "{{ qualys_agent_service_name_windows }}"
+    state: restarted
+  when: ansible_facts['os_family'] == "Windows"
+  listen: restart qualys agent
+
+- name: Reload qualys agent (Linux)
+  ansible.builtin.service:
+    name: "{{ qualys_agent_service_name_linux }}"
+    state: reloaded
+  when: ansible_facts['os_family'] != "Windows"
+  ignore_errors: true
+  listen: reload qualys agent
+
+- name: Verify agent connectivity
+  ansible.builtin.uri:
+    url: "{{ qualys_cloud_platform }}/CloudAgent/"
+    method: GET
+    timeout: 10
+    validate_certs: true
+  register: qualys_connectivity_check
+  ignore_errors: true
+  delegate_to: localhost
+  run_once: true
+  listen: verify qualys connectivity

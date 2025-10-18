@@ -1,0 +1,85 @@
+---
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - qualys_activation_id is defined
+      - qualys_activation_id | length > 0
+      - qualys_customer_id is defined
+      - qualys_customer_id | length > 0
+      - qualys_cloud_platform is defined
+      - qualys_cloud_platform | length > 0
+      - qualys_api_username is defined
+      - qualys_api_username | length > 0
+      - qualys_api_password is defined
+      - qualys_api_password | length > 0
+    fail_msg: "Required variables not set. Define: qualys_activation_id, qualys_customer_id, qualys_cloud_platform, qualys_api_username, qualys_api_password"
+    success_msg: "Required credentials validated."
+  tags:
+    - always
+    - preflight
+
+- name: Display installation details
+  ansible.builtin.debug:
+    msg:
+      - "OS: {{ ansible_facts['os_family'] }} {{ ansible_facts['distribution'] | default(ansible_facts['system']) }} {{ ansible_facts['distribution_version'] | default('') }}"
+      - "Architecture: {{ ansible_facts['architecture'] }}"
+      - "Platform: {{ qualys_cloud_platform }}"
+      - "State: {{ qualys_agent_state }}"
+  tags:
+    - always
+    - preflight
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_major_version'] }}.yml"
+        - "{{ ansible_facts['distribution'] }}.yml"
+        - "{{ ansible_facts['os_family'] }}.yml"
+        - "default.yml"
+      paths:
+        - "vars"
+  tags:
+    - always
+
+- name: Include Linux installation tasks
+  ansible.builtin.include_tasks: install_linux.yml
+  when:
+    - ansible_facts['system'] == "Linux"
+  tags:
+    - linux
+    - install
+
+- name: Include macOS installation tasks
+  ansible.builtin.include_tasks: install_macos.yml
+  when:
+    - ansible_facts['system'] == "Darwin"
+  tags:
+    - macos
+    - install
+
+- name: Include Windows installation tasks
+  ansible.builtin.include_tasks: install_windows.yml
+  when:
+    - ansible_facts['os_family'] == "Windows"
+  tags:
+    - windows
+    - install
+
+- name: Include service management tasks
+  ansible.builtin.include_tasks: service.yml
+  when:
+    - qualys_agent_state != "absent"
+  tags:
+    - service
+    - configure
+
+- name: Include validation tasks
+  ansible.builtin.include_tasks: validate.yml
+  when:
+    - qualys_agent_validate_install | bool
+    - qualys_agent_state != "absent"
+  tags:
+    - validate
+    - verify

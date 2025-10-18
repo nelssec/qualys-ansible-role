@@ -1,0 +1,20 @@
+---
+# Debian/Ubuntu specific variables
+
+qualys_agent_package_manager: "apt"
+qualys_agent_service_manager: "systemd"
+
+# Repository configuration
+qualys_agent_repo_components: "main"
+qualys_agent_apt_key_type: "url"
+
+# Package dependencies
+qualys_agent_dependencies:
+  - curl
+  - gnupg
+  - ca-certificates
+  - lsb-release
+  - apt-transport-https
+
+# AppArmor considerations (Ubuntu)
+qualys_agent_apparmor_enabled: false

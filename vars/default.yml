@@ -1,0 +1,25 @@
+---
+# Default OS-specific variables for Qualys Cloud Agent
+
+# These are fallback values used when no specific OS match is found
+# They work for most Linux distributions
+
+qualys_agent_package_manager: "auto"
+qualys_agent_service_manager: "systemd"
+
+# Package names
+qualys_agent_package_name: "qualys-cloud-agent"
+
+# Service configuration
+qualys_agent_service_name: "qualysagent"
+
+# Installation paths
+qualys_agent_install_path: "/usr/local/qualys/cloud-agent"
+qualys_agent_config_dir: "/etc/qualys/cloud-agent"
+qualys_agent_log_dir: "/var/log/qualys"
+
+# Binary locations
+qualys_agent_binary: "/usr/local/qualys/cloud-agent/bin/qualys-cloud-agent"
+
+# Repository configuration
+qualys_agent_use_repo: true

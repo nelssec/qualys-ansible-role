@@ -1,0 +1,133 @@
+---
+- name: Windows | Check if Qualys Agent is already installed
+  ansible.windows.win_service:
+    name: "{{ qualys_agent_service_name_windows }}"
+  register: qualys_windows_service_check
+  ignore_errors: true
+  tags:
+    - preflight
+
+- name: Windows | Display current agent status
+  ansible.builtin.debug:
+    msg: "Qualys Cloud Agent is {{ 'installed' if qualys_windows_service_check.exists else 'not installed' }}"
+  tags:
+    - preflight
+
+- name: Windows | Handle agent removal
+  when:
+    - qualys_agent_state == "absent"
+  block:
+    - name: Windows | Stop Qualys Agent service
+      ansible.windows.win_service:
+        name: "{{ qualys_agent_service_name_windows }}"
+        state: stopped
+      ignore_errors: true
+
+    - name: Windows | Find Qualys uninstaller
+      ansible.windows.win_find:
+        paths:
+          - 'C:\Program Files\Qualys\QualysAgent'
+          - 'C:\Program Files (x86)\Qualys\QualysAgent'
+        patterns:
+          - 'uninstall.exe'
+          - 'QualysCloudAgent.exe'
+        recurse: false
+      register: qualys_uninstaller
+
+    - name: Windows | Uninstall Qualys Cloud Agent
+      ansible.windows.win_package:
+        path: "{{ qualys_uninstaller.files[0].path }}"
+        arguments: '/s'
+        state: absent
+      when: qualys_uninstaller.matched > 0
+
+    - name: Windows | Remove agent directory
+      ansible.windows.win_file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "C:\\Program Files\\Qualys"
+        - "C:\\ProgramData\\Qualys"
+
+    - name: Windows | Agent removal completed
+      ansible.builtin.debug:
+        msg: "Qualys Cloud Agent has been successfully removed."
+
+- name: Windows | End play for removal
+  ansible.builtin.meta: end_host
+  when: qualys_agent_state == "absent"
+
+- name: Windows | Ensure download directory exists
+  ansible.windows.win_file:
+    path: "{{ qualys_agent_windows_download_path }}"
+    state: directory
+  tags:
+    - prepare
+
+- name: Windows | Download agent via Qualys API
+  ansible.builtin.include_tasks: download.yml
+  tags:
+    - download
+
+- name: Windows | Install Qualys Cloud Agent
+  ansible.windows.win_package:
+    path: "{{ qualys_agent_windows_download_path }}\\{{ qualys_agent_windows_installer_name }}"
+    arguments: >
+      CustomerId={{ qualys_customer_id }}
+      ActivationId={{ qualys_activation_id }}
+      WebServiceUri={{ qualys_cloud_platform }}/CloudAgent/
+      {% if qualys_agent_proxy_url %}ProxyUri={{ qualys_agent_proxy_url }}{% endif %}
+      {% if qualys_agent_log_level %}LogLevel={{ qualys_agent_log_level }}{% endif %}
+      /s
+    state: present
+    creates_service: "{{ qualys_agent_service_name_windows }}"
+  register: qualys_agent_installed
+  no_log: true
+  timeout: "{{ qualys_agent_install_timeout }}"
+  tags:
+    - install
+
+- name: Windows | Wait for agent service to be created
+  ansible.windows.win_service:
+    name: "{{ qualys_agent_service_name_windows }}"
+  register: qualys_service_status
+  retries: 12
+  delay: 5
+  until: qualys_service_status.exists
+  when: qualys_agent_installed is changed
+
+- name: Windows | Configure agent service for automatic startup
+  ansible.windows.win_service:
+    name: "{{ qualys_agent_service_name_windows }}"
+    start_mode: auto
+  when:
+    - qualys_agent_service_enabled | bool
+
+- name: Windows | Configure Windows Firewall rule for Qualys Agent
+  community.windows.win_firewall_rule:
+    name: "Qualys Cloud Agent"
+    description: "Allow Qualys Cloud Agent outbound connections"
+    direction: out
+    action: allow
+    program: 'C:\Program Files\Qualys\QualysAgent\qualys-cloud-agent.exe'
+    enabled: true
+    state: present
+  ignore_errors: true
+
+- name: Windows | Clean up installer
+  ansible.windows.win_file:
+    path: "{{ qualys_agent_windows_download_path }}\\{{ qualys_agent_windows_installer_name }}"
+    state: absent
+  when:
+    - qualys_agent_cleanup_installer | bool
+    - qualys_agent_installed is changed
+  tags:
+    - cleanup
+
+- name: Windows | Installation summary
+  ansible.builtin.debug:
+    msg:
+      - "Qualys Cloud Agent installation completed successfully"
+      - "Installation path: C:\\Program Files\\Qualys\\QualysAgent"
+      - "Installation status: {{ 'newly installed' if qualys_agent_installed is changed else 'already present' }}"
+      - "Service name: {{ qualys_agent_service_name_windows }}"

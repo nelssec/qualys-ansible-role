@@ -1,0 +1,50 @@
+---
+# Required credentials (set via vault or group_vars)
+# qualys_activation_id: ""
+# qualys_customer_id: ""
+# qualys_api_username: ""
+# qualys_api_password: ""
+
+qualys_cloud_platform: "https://qagpublic.qg1.apps.qualys.com"
+qualys_api_url: "{{ qualys_cloud_platform.replace('qagpublic', 'qualysapi').replace('/CloudAgent', '') }}"
+
+qualys_agent_state: "present"
+qualys_agent_install_timeout: 600
+
+qualys_agent_linux_download_path: "/tmp"
+qualys_agent_linux_package_name: "qualys-cloud-agent"
+qualys_agent_macos_download_path: "/tmp"
+qualys_agent_macos_package_name: "QualysCloudAgent.pkg"
+qualys_agent_windows_download_path: "C:\\Temp"
+qualys_agent_windows_installer_name: "QualysCloudAgent.exe"
+
+qualys_agent_service_enabled: true
+qualys_agent_service_state: "started"
+qualys_agent_service_name_linux: "qualysagent"
+qualys_agent_service_name_windows: "QualysAgent"
+
+qualys_agent_proxy_url: ""
+qualys_agent_proxy_username: ""
+qualys_agent_proxy_password: ""
+
+qualys_agent_log_level: 2
+qualys_agent_log_path_linux: "/var/log/qualys"
+qualys_agent_log_path_windows: "C:\\ProgramData\\Qualys\\QualysAgent"
+
+qualys_agent_config_path_linux: "/etc/qualys/cloud-agent"
+qualys_agent_config_path_windows: "C:\\ProgramData\\Qualys\\QualysAgent"
+
+qualys_agent_request_timeout: 120
+qualys_agent_retry_count: 3
+qualys_agent_retry_delay: 10
+qualys_agent_validate_install: true
+qualys_agent_force_reinstall: false
+qualys_agent_tags: []
+
+qualys_agent_enable_vulnerability_detection: true
+qualys_agent_enable_asset_inventory: true
+qualys_agent_enable_file_integrity_monitoring: false
+qualys_agent_enable_indication_of_compromise: false
+
+qualys_agent_cleanup_installer: true
+qualys_agent_cleanup_temp_files: true

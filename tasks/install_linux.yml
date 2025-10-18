@@ -1,0 +1,128 @@
+---
+- name: Linux | Check if Qualys Agent is already installed
+  ansible.builtin.stat:
+    path: /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent
+  register: qualys_linux_binary
+  tags:
+    - preflight
+
+- name: Linux | Display current agent status
+  ansible.builtin.debug:
+    msg: "Qualys Cloud Agent is {{ 'installed' if qualys_linux_binary.stat.exists else 'not installed' }}"
+  tags:
+    - preflight
+
+- name: Linux | Handle agent removal
+  when:
+    - qualys_agent_state == "absent"
+  block:
+    - name: Linux | Stop Qualys Agent service
+      ansible.builtin.service:
+        name: "{{ qualys_agent_service_name_linux }}"
+        state: stopped
+      ignore_errors: true
+
+    - name: Linux | Remove Qualys Cloud Agent package (RPM)
+      ansible.builtin.package:
+        name: "{{ qualys_agent_linux_package_name }}"
+        state: absent
+      when: ansible_facts['os_family'] in ['RedHat', 'Suse']
+      ignore_errors: true
+
+    - name: Linux | Remove Qualys Cloud Agent package (DEB)
+      ansible.builtin.package:
+        name: "{{ qualys_agent_linux_package_name }}"
+        state: absent
+      when: ansible_facts['os_family'] == 'Debian'
+      ignore_errors: true
+
+    - name: Linux | Remove agent directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/local/qualys
+        - /etc/qualys
+        - /var/log/qualys
+
+    - name: Linux | Agent removal completed
+      ansible.builtin.debug:
+        msg: "Qualys Cloud Agent has been successfully removed."
+
+- name: Linux | End play for removal
+  ansible.builtin.meta: end_host
+  when: qualys_agent_state == "absent"
+
+- name: Linux | Create download directory
+  ansible.builtin.file:
+    path: "{{ qualys_agent_linux_download_path }}"
+    state: directory
+    mode: '0755'
+  tags:
+    - prepare
+
+- name: Linux | Download agent via Qualys API
+  ansible.builtin.include_tasks: download.yml
+  tags:
+    - download
+
+- name: Linux | Install Qualys Cloud Agent (RPM)
+  ansible.builtin.package:
+    name: "{{ qualys_agent_linux_download_path }}/{{ qualys_agent_linux_package_name }}"
+    state: present
+  when: ansible_facts['os_family'] in ['RedHat', 'Suse']
+  register: qualys_agent_installed_rpm
+  tags:
+    - install
+
+- name: Linux | Install Qualys Cloud Agent (DEB)
+  ansible.builtin.apt:
+    deb: "{{ qualys_agent_linux_download_path }}/{{ qualys_agent_linux_package_name }}"
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+  register: qualys_agent_installed_deb
+  tags:
+    - install
+
+- name: Linux | Set installed fact
+  ansible.builtin.set_fact:
+    qualys_agent_installed: "{{ qualys_agent_installed_rpm | default(qualys_agent_installed_deb) }}"
+
+- name: Linux | Configure agent activation
+  when:
+    - qualys_agent_installed is changed or qualys_agent_force_reinstall | bool
+  block:
+    - name: Linux | Run activation script
+      ansible.builtin.command:
+        cmd: >
+          /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh
+          ActivationId={{ qualys_activation_id }}
+          CustomerId={{ qualys_customer_id }}
+          WebServiceUri={{ qualys_cloud_platform }}/CloudAgent/
+          {% if qualys_agent_proxy_url %}ProxyUri={{ qualys_agent_proxy_url }}{% endif %}
+          {% if qualys_agent_log_level %}LogLevel={{ qualys_agent_log_level }}{% endif %}
+      register: qualys_agent_activation
+      changed_when: "'Successfully activated' in qualys_agent_activation.stdout or qualys_agent_activation.rc == 0"
+      failed_when: qualys_agent_activation.rc not in [0, 1]
+      no_log: true
+      timeout: "{{ qualys_agent_install_timeout }}"
+
+    - name: Linux | Display activation result
+      ansible.builtin.debug:
+        msg: "Agent activation completed with status: {{ qualys_agent_activation.rc }}"
+
+- name: Linux | Cleanup installer
+  ansible.builtin.file:
+    path: "{{ qualys_agent_linux_download_path }}/{{ qualys_agent_linux_package_name }}"
+    state: absent
+  when:
+    - qualys_agent_cleanup_installer | bool
+    - qualys_agent_installed is changed
+  tags:
+    - cleanup
+
+- name: Linux | Installation summary
+  ansible.builtin.debug:
+    msg:
+      - "Qualys Cloud Agent installation completed successfully"
+      - "Installation status: {{ 'newly installed' if qualys_agent_installed is changed else 'already present' }}"
