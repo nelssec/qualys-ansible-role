@@ -1,0 +1,46 @@
+# Ansible
+*.retry
+*.log
+.vault_pass
+.vault_password
+
+# Molecule
+.molecule/
+.cache/
+molecule/**/junit.xml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+tmp/
+temp/
+
+# Test outputs
+test-results/
+.pytest_cache/
+
+# Credentials (NEVER commit these!)
+*vault*.yml
+*secret*.yml
+*password*.txt
+credentials.yml
