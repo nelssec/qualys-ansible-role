@@ -79,11 +79,21 @@
       {% elif ansible_facts['system'] == 'Darwin' %}{{ qualys_agent_macos_download_path }}
       {% else %}{{ qualys_agent_windows_download_path }}{% endif %}
 
-- name: Download | Create temporary XML file
+- name: Download | Create temporary XML file (Linux/macOS/Unix)
   ansible.builtin.copy:
     content: "{{ qualys_download_xml }}"
     dest: "{{ qualys_temp_dir }}/download_request.xml"
     mode: '0600'
+    owner: root
+    group: "{{ 'wheel' if ansible_facts['system'] == 'Darwin' else 'root' }}"
+  when: ansible_facts['os_family'] != 'Windows'
+  become: true
+
+- name: Download | Create temporary XML file (Windows)
+  ansible.windows.win_copy:
+    content: "{{ qualys_download_xml }}"
+    dest: "{{ qualys_temp_dir }}\\download_request.xml"
+  when: ansible_facts['os_family'] == 'Windows'
 
 - name: Download | Set download path based on OS
   ansible.builtin.set_fact:
@@ -108,21 +118,24 @@
       Content-Type: "text/xml"
       X-Requested-With: "curl"
     dest: "{{ qualys_download_path }}"
+    mode: '0600'
     status_code: 200
     timeout: "{{ qualys_agent_request_timeout }}"
+    validate_certs: true
   register: qualys_download_result
   retries: "{{ qualys_agent_retry_count }}"
   delay: "{{ qualys_agent_retry_delay }}"
   until: qualys_download_result is succeeded
   when: ansible_facts['os_family'] != 'Windows'
   no_log: true
+  become: true
 
 - name: Download | Fetch agent from Qualys API (Windows)
   ansible.windows.win_uri:
     url: "{{ qualys_api_url }}/qps/rest/1.0/download/ca/downloadbinary/"
     method: POST
-    user: "{{ qualys_api_username }}"
-    password: "{{ qualys_api_password }}"
+    url_username: "{{ qualys_api_username }}"
+    url_password: "{{ qualys_api_password }}"
     force_basic_auth: true
     body: "{{ qualys_download_xml }}"
     headers:
@@ -131,11 +144,36 @@
     dest: "{{ qualys_download_path }}"
     status_code: 200
     timeout: "{{ qualys_agent_request_timeout }}"
+    validate_certs: true
   register: qualys_download_result_windows
+  retries: "{{ qualys_agent_retry_count }}"
+  delay: "{{ qualys_agent_retry_delay }}"
+  until: qualys_download_result_windows is succeeded
   when: ansible_facts['os_family'] == 'Windows'
   no_log: true
 
-- name: Download | Cleanup XML request file
+- name: Download | Cleanup XML request file (Linux/macOS/Unix)
   ansible.builtin.file:
     path: "{{ qualys_temp_dir }}/download_request.xml"
     state: absent
+  when: ansible_facts['os_family'] != 'Windows'
+  become: true
+  ignore_errors: true
+
+- name: Download | Cleanup XML request file (Windows)
+  ansible.windows.win_file:
+    path: "{{ qualys_temp_dir }}\\download_request.xml"
+    state: absent
+  when: ansible_facts['os_family'] == 'Windows'
+  ignore_errors: true
+
+# Security: Verify download succeeded
+- name: Download | Verify agent package was downloaded successfully
+  ansible.builtin.assert:
+    that:
+      - (qualys_download_result is defined and qualys_download_result is succeeded) or
+        (qualys_download_result_windows is defined and qualys_download_result_windows is succeeded)
+    fail_msg: "Failed to download Qualys agent package from API"
+    success_msg: "Agent package downloaded successfully"
+  tags:
+    - download

@@ -11,11 +11,13 @@ qualys_api_url: "{{ qualys_cloud_platform.replace('qagpublic', 'qualysapi').repl
 qualys_agent_state: "present"
 qualys_agent_install_timeout: 600
 
-qualys_agent_linux_download_path: "/tmp"
+# Download paths - using secure directories instead of world-readable /tmp
+# These directories are created with restricted permissions (0700)
+qualys_agent_linux_download_path: "/var/tmp/qualys-agent"
 qualys_agent_linux_package_name: "qualys-cloud-agent"
-qualys_agent_macos_download_path: "/tmp"
+qualys_agent_macos_download_path: "/var/tmp/qualys-agent"
 qualys_agent_macos_package_name: "QualysCloudAgent.pkg"
-qualys_agent_windows_download_path: "C:\\Temp"
+qualys_agent_windows_download_path: "C:\\ProgramData\\Qualys\\Installer"
 qualys_agent_windows_installer_name: "QualysCloudAgent.exe"
 
 qualys_agent_service_enabled: true
