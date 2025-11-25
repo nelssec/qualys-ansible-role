@@ -6,6 +6,7 @@
     name: "{{ qualys_agent_service_name_linux }}"
     state: restarted
   when: ansible_facts['os_family'] != "Windows"
+  become: true
   listen: restart qualys agent
 
 - name: Restart qualys agent (Windows)
@@ -20,6 +21,7 @@
     name: "{{ qualys_agent_service_name_linux }}"
     state: reloaded
   when: ansible_facts['os_family'] != "Windows"
+  become: true
   failed_when: false
   listen: reload qualys agent
 

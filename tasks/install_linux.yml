@@ -15,6 +15,7 @@
 - name: Linux | Handle agent removal
   when:
     - qualys_agent_state == "absent"
+  become: true
   block:
     - name: Linux | Stop Qualys Agent service
       ansible.builtin.service:
@@ -57,7 +58,10 @@
   ansible.builtin.file:
     path: "{{ qualys_agent_linux_download_path }}"
     state: directory
-    mode: '0755'
+    mode: '0700'
+    owner: root
+    group: root
+  become: true
   tags:
     - prepare
 
@@ -72,6 +76,7 @@
     state: present
   when: ansible_facts['os_family'] in ['RedHat', 'Suse']
   register: qualys_agent_installed_rpm
+  become: true
   tags:
     - install
 
@@ -81,6 +86,7 @@
     state: present
   when: ansible_facts['os_family'] == 'Debian'
   register: qualys_agent_installed_deb
+  become: true
   tags:
     - install
 
@@ -94,18 +100,19 @@
   block:
     - name: Linux | Run activation script
       ansible.builtin.command:
-        cmd: >
-          /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh
-          ActivationId={{ qualys_activation_id }}
-          CustomerId={{ qualys_customer_id }}
-          WebServiceUri={{ qualys_cloud_platform }}/CloudAgent/
-          {% if qualys_agent_proxy_url %}ProxyUri={{ qualys_agent_proxy_url }}{% endif %}
-          {% if qualys_agent_log_level %}LogLevel={{ qualys_agent_log_level }}{% endif %}
+        argv:
+          - /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh
+          - "ActivationId={{ qualys_activation_id }}"
+          - "CustomerId={{ qualys_customer_id }}"
+          - "WebServiceUri={{ qualys_cloud_platform }}/CloudAgent/"
+          - "{{ 'ProxyUri=' + qualys_agent_proxy_url if qualys_agent_proxy_url else omit }}"
+          - "{{ 'LogLevel=' + (qualys_agent_log_level | string) if qualys_agent_log_level else omit }}"
       register: qualys_agent_activation
       changed_when: "'Successfully activated' in qualys_agent_activation.stdout or qualys_agent_activation.rc == 0"
       failed_when: qualys_agent_activation.rc not in [0, 1]
       no_log: true
       timeout: "{{ qualys_agent_install_timeout }}"
+      become: true
 
     - name: Linux | Display activation result
       ansible.builtin.debug:
@@ -118,6 +125,7 @@
   when:
     - qualys_agent_cleanup_installer | bool
     - qualys_agent_installed is changed
+  become: true
   tags:
     - cleanup
 

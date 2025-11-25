@@ -1,4 +1,5 @@
 ---
+# Security: Validate required variables exist
 - name: Validate required variables
   ansible.builtin.assert:
     that:
@@ -14,6 +15,43 @@
       - qualys_api_password | length > 0
     fail_msg: "Required variables not set. Define: qualys_activation_id, qualys_customer_id, qualys_cloud_platform, qualys_api_username, qualys_api_password"
     success_msg: "Required credentials validated."
+  no_log: true
+  tags:
+    - always
+    - preflight
+
+# Security: Validate URL format to prevent SSRF and injection
+- name: Validate cloud platform URL format
+  ansible.builtin.assert:
+    that:
+      - qualys_cloud_platform is regex('^https://[a-zA-Z0-9][a-zA-Z0-9.-]+\\.qualys\\.(com|eu|in|ca|uk|au)')
+    fail_msg: "qualys_cloud_platform must be a valid Qualys HTTPS URL (e.g., https://qagpublic.qg1.apps.qualys.com)"
+    success_msg: "Cloud platform URL validated."
+  tags:
+    - always
+    - preflight
+
+# Security: Validate IDs contain only safe characters (alphanumeric, hyphens, underscores)
+- name: Validate activation and customer IDs format
+  ansible.builtin.assert:
+    that:
+      - qualys_activation_id is regex('^[a-zA-Z0-9_-]+$')
+      - qualys_customer_id is regex('^[a-zA-Z0-9_-]+$')
+    fail_msg: "qualys_activation_id and qualys_customer_id must contain only alphanumeric characters, hyphens, and underscores"
+    success_msg: "Credential format validated."
+  no_log: true
+  tags:
+    - always
+    - preflight
+
+# Security: Validate proxy URL if specified
+- name: Validate proxy URL format if specified
+  ansible.builtin.assert:
+    that:
+      - qualys_agent_proxy_url is regex('^https?://[a-zA-Z0-9][a-zA-Z0-9._:-]+$') or qualys_agent_proxy_url | length == 0
+    fail_msg: "qualys_agent_proxy_url must be a valid HTTP/HTTPS URL if specified"
+    success_msg: "Proxy URL validated."
+  when: qualys_agent_proxy_url is defined
   tags:
     - always
     - preflight

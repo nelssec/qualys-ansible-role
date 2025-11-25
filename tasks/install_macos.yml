@@ -15,6 +15,7 @@
 - name: MacOS | Handle agent removal
   when:
     - qualys_agent_state == "absent"
+  become: true
   block:
     - name: MacOS | Unload LaunchDaemon
       ansible.builtin.command:
@@ -44,7 +45,10 @@
   ansible.builtin.file:
     path: "{{ qualys_agent_macos_download_path }}"
     state: directory
-    mode: '0755'
+    mode: '0700'
+    owner: root
+    group: wheel
+  become: true
   tags:
     - prepare
 
@@ -55,9 +59,10 @@
 
 - name: MacOS | Install Qualys Cloud Agent package
   ansible.builtin.command:
-    cmd: installer -pkg {{ qualys_agent_macos_download_path }}/{{ qualys_agent_macos_package_name }} -target /
+    cmd: "installer -pkg '{{ qualys_agent_macos_download_path }}/{{ qualys_agent_macos_package_name }}' -target /"
   register: qualys_pkg_install
   changed_when: qualys_pkg_install.rc == 0
+  become: true
   tags:
     - install
 
@@ -67,18 +72,19 @@
   block:
     - name: MacOS | Run activation script
       ansible.builtin.command:
-        cmd: >
-          /Applications/QualysCloudAgent.app/Contents/MacOS/qualys-cloud-agent.sh
-          ActivationId={{ qualys_activation_id }}
-          CustomerId={{ qualys_customer_id }}
-          WebServiceUri={{ qualys_cloud_platform }}/CloudAgent/
-          {% if qualys_agent_proxy_url %}ProxyUri={{ qualys_agent_proxy_url }}{% endif %}
-          {% if qualys_agent_log_level %}LogLevel={{ qualys_agent_log_level }}{% endif %}
+        argv:
+          - /Applications/QualysCloudAgent.app/Contents/MacOS/qualys-cloud-agent.sh
+          - "ActivationId={{ qualys_activation_id }}"
+          - "CustomerId={{ qualys_customer_id }}"
+          - "WebServiceUri={{ qualys_cloud_platform }}/CloudAgent/"
+          - "{{ 'ProxyUri=' + qualys_agent_proxy_url if qualys_agent_proxy_url else omit }}"
+          - "{{ 'LogLevel=' + (qualys_agent_log_level | string) if qualys_agent_log_level else omit }}"
       register: qualys_agent_activation
       changed_when: "'Successfully activated' in qualys_agent_activation.stdout or qualys_agent_activation.rc == 0"
       failed_when: qualys_agent_activation.rc not in [0, 1]
       no_log: true
       timeout: "{{ qualys_agent_install_timeout }}"
+      become: true
 
     - name: MacOS | Display activation result
       ansible.builtin.debug:
@@ -91,6 +97,7 @@
   when:
     - qualys_agent_cleanup_installer | bool
     - qualys_pkg_install is changed
+  become: true
   tags:
     - cleanup
 
