@@ -83,7 +83,7 @@
   ansible.builtin.copy:
     content: "{{ qualys_download_xml }}"
     dest: "{{ qualys_temp_dir }}/download_request.xml"
-    mode: '0600'
+    mode: "0600"
     owner: root
     group: "{{ 'wheel' if ansible_facts['system'] == 'Darwin' else 'root' }}"
   when: ansible_facts['os_family'] != 'Windows'
@@ -118,7 +118,7 @@
       Content-Type: "text/xml"
       X-Requested-With: "curl"
     dest: "{{ qualys_download_path }}"
-    mode: '0600'
+    mode: "0600"
     status_code: 200
     timeout: "{{ qualys_agent_request_timeout }}"
     validate_certs: true

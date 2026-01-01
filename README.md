@@ -5,6 +5,7 @@ Ansible role for deploying Qualys Cloud Agent using the agent binary download AP
 ## API Coverage
 
 Supports all platform and architecture parameters from Qualys Cloud Agent API:
+
 - 15 platform types (WINDOWS, MACOSX, MACOSX_M_1, LINUX, AIX, LINUX_UBUNTU, LINUX_PPC_64_LE, BSD, SOLARIS_X_86, SOLARIS_SPARC, LINUX_COREOS, LINUX_S_390_X, LINUX_UBUNTU_S_390_X, GENTOO_LINUX, LINUX_AWSBR)
 - 7 architecture types (X_86_64, ARM_64, X_64, POWER_5, SPARC, PPC_64_LE, S_390_X)
 
@@ -42,20 +43,22 @@ Platform and architecture are automatically detected. See API_REFERENCE.md for c
 ## Variables
 
 ### Required
+
 ```yaml
-qualys_activation_id: ""        # Activation ID
-qualys_customer_id: ""           # Customer ID
-qualys_api_username: ""          # API username for downloads
-qualys_api_password: ""          # API password
-qualys_cloud_platform: ""        # Platform URL
+qualys_activation_id: "" # Activation ID
+qualys_customer_id: "" # Customer ID
+qualys_api_username: "" # API username for downloads
+qualys_api_password: "" # API password
+qualys_cloud_platform: "" # Platform URL
 ```
 
 ### Common Optional
+
 ```yaml
-qualys_agent_state: "present"              # present, latest, absent
-qualys_agent_proxy_url: ""                 # HTTP proxy
-qualys_agent_log_level: 2                  # 0-3
-qualys_agent_service_enabled: true         # Enable on boot
+qualys_agent_state: "present" # present, latest, absent
+qualys_agent_proxy_url: "" # HTTP proxy
+qualys_agent_log_level: 2 # 0-3
+qualys_agent_service_enabled: true # Enable on boot
 ```
 
 See defaults/main.yml for all variables.
@@ -82,6 +85,7 @@ qualys_cloud_platform: "https://qagpublic.qg1.apps.qualys.com.au"
 The role automatically detects platform and architecture from Ansible facts.
 
 **Linux:**
+
 - RHEL/CentOS/Rocky/Alma → LINUX (X_86_64, ARM_64, PPC_64_LE, S_390_X)
 - Ubuntu → LINUX_UBUNTU (X_86_64, ARM_64)
 - Ubuntu s390x → LINUX_UBUNTU_S_390_X (S_390_X)
@@ -90,13 +94,16 @@ The role automatically detects platform and architecture from Ansible facts.
 - Gentoo → GENTOO_LINUX (X_86_64)
 
 **macOS:**
+
 - Intel → MACOSX (X_86_64)
 - Apple Silicon → MACOSX_M_1 (ARM_64)
 
 **Windows:**
+
 - All versions → WINDOWS (X_64)
 
 **Unix:**
+
 - AIX → AIX (POWER_5)
 - Solaris x86 → SOLARIS_X_86 (X_86_64)
 - Solaris SPARC → SOLARIS_SPARC (SPARC)
@@ -114,9 +121,10 @@ ansible-playbook playbook.yml --tags windows
 
 ## Troubleshooting
 
-**Agent not appearing in Qualys portal**
+### Agent not appearing in Qualys portal
 
 Check agent service status:
+
 ```bash
 # Linux
 systemctl status qualysagent
@@ -131,6 +139,7 @@ sudo launchctl list | grep qualys
 ```
 
 Verify connectivity to Qualys platform:
+
 ```bash
 # Test platform connectivity
 curl -v https://qagpublic.qg1.apps.qualys.com/CloudAgent/
@@ -139,9 +148,10 @@ curl -v https://qagpublic.qg1.apps.qualys.com/CloudAgent/
 /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh status
 ```
 
-**Installation or download failures**
+### Installation or download failures
 
 Verify API credentials and permissions:
+
 ```yaml
 # Credentials must have Cloud Agent API access
 qualys_api_username: "user_with_agent_api_access"
@@ -149,6 +159,7 @@ qualys_api_password: "valid_password"
 ```
 
 Check detected platform values:
+
 ```bash
 ansible-playbook playbook.yml -vv | grep "Platform Type"
 ```

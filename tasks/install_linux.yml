@@ -58,7 +58,7 @@
   ansible.builtin.file:
     path: "{{ qualys_agent_linux_download_path }}"
     state: directory
-    mode: '0700'
+    mode: "0700"
     owner: root
     group: root
   become: true

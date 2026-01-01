@@ -3,6 +3,7 @@
 *.log
 .vault_pass
 .vault_password
+.ansible
 
 # Molecule
 .molecule/

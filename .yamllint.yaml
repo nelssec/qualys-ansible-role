@@ -1,0 +1,21 @@
+---
+extends: default
+rules:
+  braces:
+    max-spaces-inside: 1
+  comments:
+    require-starting-space: true
+    ignore-shebangs: true
+    min-spaces-from-content: 1 # matches default config of Prettier
+  comments-indentation: false
+  line-length: disable
+  octal-values:
+    forbid-explicit-octal: true
+    forbid-implicit-octal: true
+  truthy:
+    allowed-values:
+      - "true"
+      - "false"
+    check-keys: true
+    ignore: |
+      .github/workflows/*

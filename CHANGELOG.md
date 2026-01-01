@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2025-10-18
 
 ### Added
+
 - macOS support (10.15 through 14.x)
 - macOS installation via .pkg installer
 - macOS LaunchDaemon service management
@@ -16,13 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ARM64 support for macOS
 
 ### Changed
+
 - Service management updated to handle macOS LaunchDaemons
 - Validation tasks extended for macOS
 - Documentation updated with macOS examples
 
 ## [1.0.0] - 2025-10-17
 
-### Added
+### Added in 1.0.0
+
 - Initial release of Qualys Cloud Agent role
 - Cross-platform support (Linux and Windows)
 - Support for multiple Linux distributions:
@@ -55,19 +58,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Force reinstall capability
 
 ### Features
--  Fully automated installation and configuration
--  Works with Ansible 2.10+
--  Supports both x86_64 and ARM64 architectures (Linux)
--  Comprehensive error handling
--  Detailed logging and debug output
--  Tag-based execution control
--  Check mode support
--  Handler-based service management
--  OS-specific variable management
--  Modern Ansible best practices (FQCN)
--  Production-ready with extensive testing
+
+- Fully automated installation and configuration
+- Works with Ansible 2.10+
+- Supports both x86_64 and ARM64 architectures (Linux)
+- Comprehensive error handling
+- Detailed logging and debug output
+- Tag-based execution control
+- Check mode support
+- Handler-based service management
+- OS-specific variable management
+- Modern Ansible best practices (FQCN)
+- Production-ready with extensive testing
 
 ### Documentation
+
 - Complete README with usage examples
 - Multiple example playbooks
 - Troubleshooting guide
@@ -75,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guidelines
 
 ### Testing
+
 - Molecule framework integration
 - Multi-distribution testing
 - Idempotence testing
@@ -83,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+
 - Azure-specific deployment examples
 - GCP-specific deployment examples
 - Ansible Tower/AWX integration guide
@@ -95,8 +102,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced monitoring and alerting
 - Automated agent updates
 - Bulk deployment optimization
-
-
 
 ## Version History
 
