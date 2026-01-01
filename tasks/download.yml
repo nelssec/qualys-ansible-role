@@ -158,14 +158,16 @@
     state: absent
   when: ansible_facts['os_family'] != 'Windows'
   become: true
-  ignore_errors: true
+  retries: 20
+  delay: 5
 
 - name: Download | Cleanup XML request file (Windows)
   ansible.windows.win_file:
     path: "{{ qualys_temp_dir }}\\download_request.xml"
     state: absent
   when: ansible_facts['os_family'] == 'Windows'
-  ignore_errors: true
+  retries: 20
+  delay: 5
 
 # Security: Verify download succeeded
 - name: Download | Verify agent package was downloaded successfully
